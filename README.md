@@ -1,8 +1,5 @@
 # RDKit
-[![Build status](https://travis-ci.com/rdkit/rdkit.svg)](https://travis-ci.com/rdkit/rdkit)
-[![Documentation Status](https://readthedocs.org/projects/rdkit/badge/?version=latest)](http://rdkit.readthedocs.org/en/latest/)
-[![DOI](https://zenodo.org/badge/10009991.svg)](https://zenodo.org/badge/latestdoi/10009991)
-
+A fork of RDKit that supports installation with setuptools
 
 [RDKit](https://github.com/rdkit/rdkit) is a collection of cheminformatics and machine-learning software written in C++ and Python.
 

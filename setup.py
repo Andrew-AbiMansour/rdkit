@@ -8,12 +8,50 @@ __version__ = "2018.9.2.7"
 
 import subprocess
 import setuptools
-import os, sys
+import os, sys, shutil
 import glob
 from distutils.command.build import build
+from distutils.command.build_py import build_py
 from distutils.command.clean import clean
 
 class RDKitBuild(build):
+
+  def find(self, fname, path):
+
+    for root, dirs, files in os.walk(path):
+      if fname in files:
+        return os.path.join(root, fname)
+
+    return None
+
+  def run(self):
+
+    python_version = str(sys.version_info[0]) + str(sys.version_info[1])
+
+    python_lib = self.find('libpython{}.so'.format(python_version).format(python_version), '/') 
+    python_exec = sys.executable
+
+    if not python_lib:
+      print('Could not find any installed python-dev (libpython.so) library.')
+      print('Proceeding ...')
+      cm_args = ['-DPYTHON_EXECUTABLE=' + python_exec]
+    else:
+      cm_args = ['-DPYTHON_LIBRARY=' + python_lib, '-DPYTHON_EXECUTABLE=' + python_exec]
+
+    os.chdir('src/build')
+    try:
+      import ninja
+    except:
+      self.spawn(cmd=['cmake', '..'] +  cm_args)
+      self.spawn(cmd=['make', 'install'])
+    else:
+      self.spawn(cmd=['cmake', '-GNinja', '..'] +  cm_args)
+      self.spawn(cmd=['ninja'])
+
+    os.chdir('../..')
+    super().run()
+
+class RDKitBuild_py(build_py):
 
   def find(self, fname, path):
 
@@ -54,13 +92,20 @@ class RDKClean(clean):
 
   def findObjFiles(self, fdir):
 
+    dfile_ext = ['tar.gz', '.so.1', '.so', '.log']
+
     for path in glob.glob(fdir):
       if os.path.isdir(path):
         self.findObjFiles(path + '/*')
       elif os.path.isfile(path):
-        if path.endswith('.so') or path.endswith('.so.1'):
-          os.remove(path)
-          print('Deleting ' + os.path.abspath(path))
+        for ext in dfile_ext:
+          if path.endswith(ext):
+            os.remove(path)
+            print('Deleting ' + os.path.abspath(path))
+
+    if os.path.isdir('src/build'):
+      print('Deleting src/build dir')
+      shutil.rmtree('src/build')
 
   def run(self):
     self.findObjFiles('src/*')
@@ -76,7 +121,7 @@ def pre_build():
 
 if __name__ == '__main__':
 
-  pre_build()
+  pre_build() # must be always called to ensure sdist is built correctly
 
   setuptools.setup(
       name = "rdkit",
@@ -95,5 +140,5 @@ if __name__ == '__main__':
   	     "Programming Language :: Python :: 3"
       ],
       zip_safe=False,
-      cmdclass={'build': RDKitBuild, 'clean': RDKClean},
+      cmdclass={'build_py': RDKitBuild_py, 'build': RDKitBuild, 'clean': RDKClean},
       )

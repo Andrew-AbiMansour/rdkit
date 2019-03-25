@@ -80,7 +80,7 @@ class RDKitBuild_py(build_py):
       import ninja
     except:
       self.spawn(cmd=['cmake', '..'] +  cm_args)
-      self.spawn(cmd=['make', 'install'])
+      self.spawn(cmd=['make', 'install', '-j2'])
     else:
       self.spawn(cmd=['cmake', '-GNinja', '..'] +  cm_args)
       self.spawn(cmd=['ninja'])
@@ -108,6 +108,7 @@ class RDKClean(clean):
     dlist = ['build', 'External/rapidjson-1.1.0', 'External/catch/catch/',
             'External/YAeHMOP/tmp/', 'External/YAeHMOP/src/',
             'External/CoordGen/maeparser/', 'External/CoordGen/coordgen/',
+            'External/YAeHMOP/yaehmop/',
             'rdkit/Chem/inchi.py', 'Code/GraphMol/SLNParse/lex.yysln.cpp',
             'Code/GraphMol/SLNParse/sln.tab.cpp', 'Code/GraphMol/SLNParse/sln.tab.hpp',
             'Code/GraphMol/SmilesParse/lex.yysmarts.cpp', 'Code/GraphMol/SmilesParse/lex.yysmiles.cpp',

@@ -90,25 +90,46 @@ class RDKitBuild_py(build_py):
 
 class RDKClean(clean):
 
-  def findObjFiles(self, fdir):
+  def delObjFiles(self, fdir):
 
     dfile_ext = ['tar.gz', '.so.1', '.so', '.log']
 
     for path in glob.glob(fdir):
       if os.path.isdir(path):
-        self.findObjFiles(path + '/*')
+        self.delObjFiles(path + '/*')
       elif os.path.isfile(path):
         for ext in dfile_ext:
           if path.endswith(ext):
             os.remove(path)
             print('Deleting ' + os.path.abspath(path))
 
-    if os.path.isdir('src/build'):
-      print('Deleting src/build dir')
-      shutil.rmtree('src/build')
+  def delDownloadedFiles(self, fdir):
+
+    dlist = ['build', 'External/rapidjson-1.1.0', 'External/catch/catch/',
+            'External/YAeHMOP/tmp/', 'External/YAeHMOP/src/',
+            'External/CoordGen/maeparser/', 'External/CoordGen/coordgen/',
+            'rdkit/Chem/inchi.py', 'Code/GraphMol/SLNParse/lex.yysln.cpp',
+            'Code/GraphMol/SLNParse/sln.tab.cpp', 'Code/GraphMol/SLNParse/sln.tab.hpp',
+            'Code/GraphMol/SmilesParse/lex.yysmarts.cpp', 'Code/GraphMol/SmilesParse/lex.yysmiles.cpp',
+            'Code/GraphMol/SmilesParse/smarts.tab.cpp', 'Code/GraphMol/SmilesParse/smarts.tab.hpp',
+            'Code/GraphMol/SmilesParse/smiles.tab.cpp', 'Code/GraphMol/SmilesParse/smiles.tab.hpp',
+            'Code/RDGeneral/RDConfig.h', 'Code/RDGeneral/export.h', 'Code/RDGeneral/test.h', 
+            'Code/RDGeneral/versions.cpp', 'Code/RDGeneral/versions.h']
+
+    for dobj in dlist:
+      path = os.path.join(fdir, dobj)
+
+      if os.path.isdir(path):
+        shutil.rmtree(path)
+      elif os.path.isfile(path):
+        os.remove(path)
+      else:
+        continue
+      print('Deleting ' + os.path.abspath(path))
 
   def run(self):
-    self.findObjFiles('src/*')
+    self.delObjFiles('src/*')
+    self.delDownloadedFiles('src')
     super().run()
 
 def pre_build():

@@ -4,15 +4,16 @@
 '''
 
 
-__version__ = "2018.9.2.8"
+__version__ = "2018.9.2.10"
 
 import subprocess
 import setuptools
 import os, sys, shutil
-import glob
+import glob, re
 from distutils.command.build import build
 from setuptools.command.build_py import build_py
 from distutils.command.clean import clean
+from collections import defaultdict
 
 class RDKitBuild(build):
 
@@ -134,7 +135,7 @@ class RDKClean(clean):
     self.delDownloadedFiles('src')
     super().run()
 
-def pre_build(include_dirs):
+def pre_build():
 
   if not os.path.isdir("src/build"):
     os.mkdir('src/build')
@@ -142,13 +143,31 @@ def pre_build(include_dirs):
   if not os.path.isdir("src/build/lib"):
     os.mkdir('src/build/lib')
 
-  for include_dir in include_dirs:
-    open(include_dir + '/__init__.py', 'a').close()
+def data_include(src_dir, data_dirs):
+  """ returns a list of tuples: [... (dir, [file1, file2, ...]) ...] """
+
+  output = defaultdict(list)
+
+  for data_dir in data_dirs:
+    # python >= v3.5, the glob module supports the "**" for recursive option
+    dir_files = glob.iglob(os.path.join(src_dir, data_dir, '**/*'), recursive=True)
+
+    for file in dir_files:
+      if os.path.isfile(file):
+        dir_name = file.strip(os.path.basename(file)).strip(src_dir)
+        dir_name = dir_name[1:] if dir_name.startswith('/') else dir_name
+        dir_name = dir_name[:-1] if dir_name.endswith('/') else dir_name
+
+        if dir_name != 'lib':
+          dir_name = os.path.join('rdkit', dir_name)
+
+        output[dir_name].append(file)
+
+  return [(key, value) for key, value in output.items()]
 
 if __name__ == '__main__':
 
-  include_dirs = [] #'src/lib', 'src/Data', 'src/Projects', 'src/Contrib', 'src/Docs']
-  pre_build(include_dirs) # must be always called to ensure sdist is built correctly
+  pre_build() # must be always called to ensure sdist is built correctly
 
   setuptools.setup(
       name = "rdkit",
@@ -158,7 +177,8 @@ if __name__ == '__main__':
       keywords = "cheminformatics",
       url = "https://github.com/rdkit/rdkit",
       packages=setuptools.find_packages('src'),
-      package_dir={'rdkit': 'src/rdkit', 'lib': 'src/lib', 'Data': 'src/Data', 'Projects': 'src/Projects', 'Docs': 'src/Docs', 'Contrib': 'src/Contrib'},
+      package_dir={'rdkit': 'src/rdkit'},
+      data_files=data_include('src', ['lib', 'Data', 'Projects', 'Docs', 'Scripts']),
       include_package_data=True,
       classifiers=[
           "Topic :: Utilities",
